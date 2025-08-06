@@ -1,12 +1,14 @@
 'use client';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { useDropzone } from 'react-dropzone';
 
 type MediaType = {
   url: string;
   type: 'image' | 'video';
-  aspectRatio?: number;
+  aspectRatio: number;
+  width: number;
+  height: number;
 };
 
 const ASPECTS = {
@@ -37,13 +39,30 @@ export default function Home(): JSX.Element {
   const [media, setMedia] = useState<MediaType | null>(null);
   const [mediaPos, setMediaPos] = useState<PositionValue>('center');
   const [watermarkText, setWatermarkText] = useState<string>('');
+  const [windowWidth, setWindowWidth] = useState<number>(
+    typeof window !== 'undefined' ? window.innerWidth : 0
+  );
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Set frame size to fit media aspect ratio if media present
-  let w = ASPECTS[aspect].w, h = ASPECTS[aspect].h;
-  if (media && media.aspectRatio && media.aspectRatio > 0) {
-    w = 640;
-    h = Math.round(w / media.aspectRatio);
+  useEffect(() => {
+    const handleResize = (): void => setWindowWidth(window.innerWidth);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const maxWidth = windowWidth * 0.9;
+  let w = ASPECTS[aspect].w;
+  let h = ASPECTS[aspect].h;
+  if (media) {
+    const desiredWidth = Math.min(maxWidth, media.width);
+    w = desiredWidth;
+    h = desiredWidth / media.aspectRatio;
+  } else {
+    const aspectSize = ASPECTS[aspect];
+    const scale = Math.min(maxWidth / aspectSize.w, 1);
+    w = aspectSize.w * scale;
+    h = aspectSize.h * scale;
   }
 
   const fontSize = getFontSize(text, w * 0.85, h * 0.45);
@@ -64,6 +83,8 @@ export default function Home(): JSX.Element {
             url,
             type: 'image',
             aspectRatio: img.naturalWidth / img.naturalHeight,
+            width: img.naturalWidth,
+            height: img.naturalHeight,
           });
         };
         img.src = url;
@@ -74,6 +95,8 @@ export default function Home(): JSX.Element {
             url,
             type: 'video',
             aspectRatio: video.videoWidth / video.videoHeight,
+            width: video.videoWidth,
+            height: video.videoHeight,
           });
         };
         video.src = url;

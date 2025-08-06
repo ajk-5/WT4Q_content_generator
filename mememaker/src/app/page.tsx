@@ -26,11 +26,11 @@ function getFontSize(text: string, width: number, height: number): number {
 }
 
 export default function Home(): JSX.Element {
-  const [topText, setTopText] = useState<string>('Top Text');
-  const [bottomText, setBottomText] = useState<string>('Bottom Text');
+  const [mainText, setMainText] = useState<string>('Your Text');
   const [aspect, setAspect] = useState<AspectKey>('1:1');
   const [media, setMedia] = useState<MediaType | null>(null);
   const [watermarkText, setWatermarkText] = useState<string>('');
+  const [mediaPlacement, setMediaPlacement] = useState<'center' | 'above' | 'below'>('center');
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 0
   );
@@ -57,8 +57,8 @@ export default function Home(): JSX.Element {
     h = aspectSize.h * scale;
   }
 
-  const topFontSize = getFontSize(topText, w * 0.85, h * 0.25);
-  const bottomFontSize = getFontSize(bottomText, w * 0.85, h * 0.25);
+  const fontSize = getFontSize(mainText, w * 0.85, media ? h * 0.4 : h * 0.8);
+  const mediaStyle = mediaPlacement === 'below' ? { justifyContent: 'flex-end' } : {};
 
   // Dropzone with image/video aspect detection
   const { getRootProps, getInputProps } = useDropzone({
@@ -113,19 +113,11 @@ export default function Home(): JSX.Element {
         <div className="mememaker-form">
           <textarea
             className="mememaker-input"
-            value={topText}
-            maxLength={120}
-            rows={2}
-            placeholder="Top text"
-            onChange={e => setTopText(e.target.value)}
-          />
-          <textarea
-            className="mememaker-input"
-            value={bottomText}
-            maxLength={120}
-            rows={2}
-            placeholder="Bottom text"
-            onChange={e => setBottomText(e.target.value)}
+            value={mainText}
+            maxLength={240}
+            rows={3}
+            placeholder="Enter text"
+            onChange={e => setMainText(e.target.value)}
           />
           <input
             className="mememaker-input"
@@ -150,6 +142,18 @@ export default function Home(): JSX.Element {
               </select>
               {media && <span className="mememaker-lock">(Locked to media)</span>}
             </label>
+            <label className="mememaker-label">
+              Media Position:
+              <select
+                className="mememaker-select"
+                value={mediaPlacement}
+                onChange={e => setMediaPlacement(e.target.value as 'center' | 'above' | 'below')}
+              >
+                <option value="center">Center</option>
+                <option value="above">Above Text</option>
+                <option value="below">Below Text</option>
+              </select>
+            </label>
             <button {...getRootProps()} className="mememaker-btn" type="button">
               <input {...getInputProps()} />
               {media ? 'Replace Media' : 'Add Image/Video'}
@@ -164,25 +168,28 @@ export default function Home(): JSX.Element {
           style={{ width: w, height: h, minHeight: 200, margin: '0 auto' }}
           className="mememaker-canvas"
         >
-          {media && (
-            <div style={{
-              position: 'absolute', width: '100%', height: '100%',
-              top: 0, left: 0, zIndex: 1
-            }}>
-              <MediaComponent media={media} />
+          <div className="mememaker-canvas-content">
+            {media && mediaPlacement === 'above' && (
+              <div className="mememaker-media-wrapper" style={mediaStyle}>
+                <MediaComponent media={media} />
+              </div>
+            )}
+            <div className="mememaker-text-container">
+              <div className="mememaker-text" style={{ fontSize }}>
+                {mainText}
+              </div>
             </div>
-          )}
-          <div className="meme-text top" style={{ fontSize: topFontSize }}>
-            {topText}
+            {media && mediaPlacement !== 'above' && (
+              <div className="mememaker-media-wrapper" style={mediaStyle}>
+                <MediaComponent media={media} />
+              </div>
+            )}
+            {watermarkText && (
+              <div className="mememaker-watermark" style={{ fontSize: Math.max(10, h * 0.04) }}>
+                {watermarkText}
+              </div>
+            )}
           </div>
-          <div className="meme-text bottom" style={{ fontSize: bottomFontSize }}>
-            {bottomText}
-          </div>
-          {watermarkText && (
-            <div className="mememaker-watermark" style={{ fontSize: Math.max(10, h * 0.04) }}>
-              {watermarkText}
-            </div>
-          )}
         </div>
         <div style={{ textAlign: 'center', color: '#bbb', fontSize: 12, marginTop: 20 }}>
           Powered by Next.js, pure CSS, and html2canvas. No data is uploaded.

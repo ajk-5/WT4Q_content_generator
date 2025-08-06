@@ -103,7 +103,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 12px;
 }
 
 .mememaker-text-container {
@@ -114,7 +115,15 @@
   padding: 0 36px;
 }
 
+.mememaker-media-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .mememaker-text {
+  color: #fff;
   font-weight: 900;
   letter-spacing: 1.3px;
   text-align: center;

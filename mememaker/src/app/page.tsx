@@ -13,8 +13,12 @@ type MediaType = {
 
 const ASPECTS = {
   '1:1': { w: 900, h: 900 },
-  '3:2': { w: 600, h: 900 },
+  '3:2': { w: 900, h: 600 },
+  '2:3': { w: 600, h: 900 },
+  '4:3': { w: 1200, h: 900 },
+  '3:4': { w: 900, h: 1200 },
   '16:9': { w: 1280, h: 720 },
+  '9:16': { w: 720, h: 1280 },
 }; // <-- NO 'as const' here
 
 type AspectKey = keyof typeof ASPECTS;

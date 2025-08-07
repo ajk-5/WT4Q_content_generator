@@ -29,12 +29,27 @@ function getFontSize(text: string, width: number, height: number): number {
   return Math.max(28, Math.min(size, 120));
 }
 
+function findClosestAspect(ratio: number): AspectKey {
+  let closest: AspectKey = '1:1';
+  let minDiff = Infinity;
+  (Object.keys(ASPECTS) as AspectKey[]).forEach(key => {
+    const diff = Math.abs(ratio - ASPECTS[key].w / ASPECTS[key].h);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = key;
+    }
+  });
+  return closest;
+}
+
 export default function Home(): JSX.Element {
   const [mainText, setMainText] = useState<string>('Your Text');
   const [aspect, setAspect] = useState<AspectKey>('1:1');
   const [media, setMedia] = useState<MediaType | null>(null);
   const [watermarkText, setWatermarkText] = useState<string>('');
   const [mediaPlacement, setMediaPlacement] = useState<'center' | 'above' | 'below'>('center');
+  const [fontFamily, setFontFamily] = useState<string>('Impact, Arial, sans-serif');
+  const [customFontSize, setCustomFontSize] = useState<number | null>(null);
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 0
   );
@@ -48,21 +63,20 @@ export default function Home(): JSX.Element {
   }, []);
 
   const maxWidth = windowWidth * 0.9;
-  let w = ASPECTS[aspect].w;
-  let h = ASPECTS[aspect].h;
-  if (media) {
-    const desiredWidth = Math.min(maxWidth, media.width);
-    w = desiredWidth;
-    h = desiredWidth / media.aspectRatio;
-  } else {
-    const aspectSize = ASPECTS[aspect];
-    const scale = Math.min(maxWidth / aspectSize.w, 1);
-    w = aspectSize.w * scale;
-    h = aspectSize.h * scale;
-  }
+  const aspectSize = ASPECTS[aspect];
+  const widthScale = Math.min(maxWidth / aspectSize.w, 1);
+  const mediaScale = media ? Math.min(media.width / aspectSize.w, media.height / aspectSize.h) : 1;
+  const scale = Math.min(widthScale, mediaScale);
+  const w = aspectSize.w * scale;
+  const h = aspectSize.h * scale;
 
-  const fontSize = getFontSize(mainText, w * 0.85, media ? h * 0.4 : h * 0.8);
+  const autoFontSize = getFontSize(mainText, w * 0.85, media ? h * 0.4 : h * 0.8);
+  const fontSize = customFontSize ?? autoFontSize;
   const mediaStyle = mediaPlacement === 'below' ? { justifyContent: 'flex-end' } : {};
+
+  useEffect(() => {
+    setCustomFontSize(null);
+  }, [mainText, aspect, media, windowWidth]);
 
   // Dropzone with image/video aspect detection
   const { getRootProps, getInputProps } = useDropzone({
@@ -76,25 +90,29 @@ export default function Home(): JSX.Element {
       if (file.type.startsWith('image')) {
         const img = new window.Image();
         img.onload = () => {
+          const ratio = img.naturalWidth / img.naturalHeight;
           setMedia({
             url,
             type: 'image',
-            aspectRatio: img.naturalWidth / img.naturalHeight,
+            aspectRatio: ratio,
             width: img.naturalWidth,
             height: img.naturalHeight,
           });
+          setAspect(findClosestAspect(ratio));
         };
         img.src = url;
       } else if (file.type.startsWith('video')) {
         const video = document.createElement('video');
         video.onloadedmetadata = () => {
+          const ratio = video.videoWidth / video.videoHeight;
           setMedia({
             url,
             type: 'video',
-            aspectRatio: video.videoWidth / video.videoHeight,
+            aspectRatio: ratio,
             width: video.videoWidth,
             height: video.videoHeight,
           });
+          setAspect(findClosestAspect(ratio));
         };
         video.src = url;
       }
@@ -138,13 +156,11 @@ export default function Home(): JSX.Element {
                 className="mememaker-select"
                 value={aspect}
                 onChange={e => setAspect(e.target.value as AspectKey)}
-                disabled={!!media}
               >
                 {Object.keys(ASPECTS).map(a => (
                   <option value={a} key={a}>{a}</option>
                 ))}
               </select>
-              {media && <span className="mememaker-lock">(Locked to media)</span>}
             </label>
             <label className="mememaker-label">
               Media Position:
@@ -163,6 +179,34 @@ export default function Home(): JSX.Element {
               {media ? 'Replace Media' : 'Add Image/Video'}
             </button>
           </div>
+          <div className="mememaker-row">
+            <label className="mememaker-label">
+              Font:
+              <select
+                className="mememaker-select"
+                value={fontFamily}
+                onChange={e => setFontFamily(e.target.value)}
+              >
+                <option value="Impact, Arial, sans-serif">Impact</option>
+                <option value="Arial, sans-serif">Arial</option>
+                <option value="'Comic Sans MS', cursive, sans-serif">Comic Sans</option>
+                <option value="'Courier New', monospace">Courier New</option>
+                <option value="'Times New Roman', serif">Times New Roman</option>
+              </select>
+            </label>
+            <label className="mememaker-label">
+              Font Size:
+              <input
+                className="mememaker-slider"
+                type="range"
+                min={20}
+                max={200}
+                value={fontSize}
+                onChange={e => setCustomFontSize(Number(e.target.value))}
+              />
+              <span className="mememaker-lock">{Math.round(fontSize)}px</span>
+            </label>
+          </div>
           <button onClick={downloadImg} className="mememaker-btn mememaker-btn-wide" type="button">Download Image</button>
         </div>
 
@@ -179,7 +223,7 @@ export default function Home(): JSX.Element {
               </div>
             )}
             <div className="mememaker-text-container">
-              <div className="mememaker-text" style={{ fontSize }}>
+              <div className="mememaker-text" style={{ fontSize, fontFamily }}>
                 {mainText}
               </div>
             </div>

@@ -112,7 +112,12 @@ export default function Home(): JSX.Element {
       } else if (file.type.startsWith('video')) {
         const video = document.createElement('video');
         video.preload = 'metadata';
+        video.muted = true;
         video.onloadedmetadata = () => {
+          // Load the first frame so dimensions are available
+          video.currentTime = 0;
+        };
+        video.onloadeddata = () => {
           const ratio = video.videoWidth / video.videoHeight;
           setMedia({
             url,

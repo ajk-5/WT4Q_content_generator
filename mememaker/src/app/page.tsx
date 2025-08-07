@@ -358,7 +358,10 @@ function MediaComponent({ media }: { media: MediaType }): JSX.Element {
             objectFit: 'contain',
             display: 'block',
             borderRadius: 20,
-            background: '#222'
+            background: '#222',
+            padding: 20,
+            margin: 20,
+            boxSizing: 'border-box'
           }}
         />
       ) : (
@@ -376,7 +379,10 @@ function MediaComponent({ media }: { media: MediaType }): JSX.Element {
             objectFit: 'contain',
             display: 'block',
             borderRadius: 20,
-            background: '#222'
+            background: '#222',
+            padding: 20,
+            margin: 20,
+            boxSizing: 'border-box'
           }}
         />
       )}

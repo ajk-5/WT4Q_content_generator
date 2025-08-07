@@ -90,14 +90,16 @@ export default function Home(): JSX.Element {
   const { getRootProps, getInputProps } = useDropzone({
     accept: { 'image/*': [], 'video/*': [] },
     maxFiles: 1,
-    onDrop: (acceptedFiles: File[]) => {
+    onDrop: async (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
       if (!file) return;
       const url = URL.createObjectURL(file);
 
       if (file.type.startsWith('image')) {
         const img = new window.Image();
-        img.onload = () => {
+        img.src = url;
+        try {
+          await img.decode();
           const ratio = img.naturalWidth / img.naturalHeight;
           setMedia({
             url,
@@ -107,17 +109,20 @@ export default function Home(): JSX.Element {
             height: img.naturalHeight,
           });
           setAspect(findClosestAspect(ratio));
-        };
-        img.src = url;
+        } catch (err) {
+          console.error('Failed to load image', err);
+          URL.revokeObjectURL(url);
+        }
       } else if (file.type.startsWith('video')) {
         const video = document.createElement('video');
         video.preload = 'metadata';
         video.muted = true;
-        video.onloadedmetadata = () => {
-          // Load the first frame so dimensions are available
-          video.currentTime = 0;
-        };
-        video.onloadeddata = () => {
+        video.src = url;
+        try {
+          await new Promise<void>((resolve, reject) => {
+            video.onloadedmetadata = () => resolve();
+            video.onerror = () => reject(new Error('Failed to load video metadata'));
+          });
           const ratio = video.videoWidth / video.videoHeight;
           setMedia({
             url,
@@ -127,9 +132,10 @@ export default function Home(): JSX.Element {
             height: video.videoHeight,
           });
           setAspect(findClosestAspect(ratio));
-        };
-        video.src = url;
-        video.load();
+        } catch (err) {
+          console.error(err);
+          URL.revokeObjectURL(url);
+        }
       }
     }
   });

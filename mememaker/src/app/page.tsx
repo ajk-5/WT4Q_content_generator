@@ -198,15 +198,23 @@ export default function Home(): JSX.Element {
     };
 
     videoEl.currentTime = 0;
+    const prevLoop = videoEl.loop;
+    videoEl.loop = false;
+
+    const handleEnded = (): void => {
+      recorder.stop();
+    };
+    videoEl.addEventListener('ended', handleEnded);
+
     await videoEl.play();
     drawFrame();
 
     await new Promise(resolve => {
-      videoEl.onended = () => {
-        recorder.stop();
-      };
       recorder.onstop = () => resolve(null);
     });
+
+    videoEl.removeEventListener('ended', handleEnded);
+    videoEl.loop = prevLoop;
 
     const blob = new Blob(chunks, { type: 'video/webm' });
     const url = URL.createObjectURL(blob);

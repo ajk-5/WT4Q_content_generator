@@ -111,6 +111,7 @@ export default function Home(): JSX.Element {
         img.src = url;
       } else if (file.type.startsWith('video')) {
         const video = document.createElement('video');
+        video.preload = 'metadata';
         video.onloadedmetadata = () => {
           const ratio = video.videoWidth / video.videoHeight;
           setMedia({
@@ -123,6 +124,7 @@ export default function Home(): JSX.Element {
           setAspect(findClosestAspect(ratio));
         };
         video.src = url;
+        video.load();
       }
     }
   });

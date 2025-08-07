@@ -78,6 +78,15 @@ export default function Home(): JSX.Element {
     setCustomFontSize(null);
   }, [mainText, aspect, media, windowWidth]);
 
+  // Revoke object URLs when media changes to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (media?.url) {
+        URL.revokeObjectURL(media.url);
+      }
+    };
+  }, [media]);
+
   // Dropzone with image/video aspect detection
   const { getRootProps, getInputProps } = useDropzone({
     accept: { 'image/*': [], 'video/*': [] },
@@ -272,6 +281,7 @@ function MediaComponent({ media }: { media: MediaType }): JSX.Element {
           loop
           autoPlay
           muted
+          playsInline
           style={{
             width: '100%',
             height: '100%',

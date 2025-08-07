@@ -144,6 +144,79 @@ export default function Home(): JSX.Element {
     link.click();
   };
 
+  const downloadVideo = async (): Promise<void> => {
+    if (!previewRef.current || media?.type !== 'video') return;
+    const videoEl = previewRef.current.querySelector('video');
+    if (!videoEl) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const stream = canvas.captureStream();
+    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    const chunks: BlobPart[] = [];
+    recorder.ondataavailable = e => chunks.push(e.data);
+    recorder.start();
+
+    const textHeight = h / 2;
+    const mediaHeight = h / 2;
+
+    const drawFrame = (): void => {
+      ctx.clearRect(0, 0, w, h);
+      if (mediaPlacement === 'above') {
+        ctx.drawImage(videoEl, 0, 0, w, mediaHeight);
+        drawText(w / 2, mediaHeight + textHeight / 2);
+      } else {
+        drawText(w / 2, textHeight / 2);
+        ctx.drawImage(videoEl, 0, textHeight, w, mediaHeight);
+      }
+
+      if (!videoEl.paused && !videoEl.ended) {
+        requestAnimationFrame(drawFrame);
+      }
+    };
+
+    const drawText = (x: number, y: number): void => {
+      ctx.font = `${fontSize}px ${fontFamily}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#fff';
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#000';
+      ctx.strokeText(mainText, x, y, w * 0.9);
+      ctx.fillText(mainText, x, y, w * 0.9);
+      if (watermarkText) {
+        ctx.font = `${Math.max(10, h * 0.04)}px ${fontFamily}`;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+        ctx.strokeText(watermarkText, w - 10, h - 10);
+        ctx.fillText(watermarkText, w - 10, h - 10);
+      }
+    };
+
+    videoEl.currentTime = 0;
+    await videoEl.play();
+    drawFrame();
+
+    await new Promise(resolve => {
+      videoEl.onended = () => {
+        recorder.stop();
+      };
+      recorder.onstop = () => resolve(null);
+    });
+
+    const blob = new Blob(chunks, { type: 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'meme.webm';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="mememaker-bg">
       <div className="mememaker-main">
@@ -223,6 +296,9 @@ export default function Home(): JSX.Element {
             </label>
           </div>
           <button onClick={downloadImg} className="mememaker-btn mememaker-btn-wide" type="button">Download Image</button>
+          {media?.type === 'video' && (
+            <button onClick={downloadVideo} className="mememaker-btn mememaker-btn-wide" type="button">Download Video</button>
+          )}
         </div>
 
         {/* Preview area */}

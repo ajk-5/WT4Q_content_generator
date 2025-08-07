@@ -4,6 +4,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 - Create memes from images or videos.
 - Customize aspect ratio, text, fonts, and watermarks.
+- Export memes as PNG images or WebM videos.
 
 ## Getting Started
 

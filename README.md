@@ -7,3 +7,4 @@ it generates a memelike images as context my website https://www.wt4q.com as its
 - Upload images or videos as meme backgrounds.
 - Aspect ratio can be adjusted even after media upload.
 - Select different fonts and tweak font size for the meme text.
+- Download your meme as an image or a video.

@@ -50,9 +50,8 @@ export default function Home(): JSX.Element {
   const [mediaPlacement, setMediaPlacement] = useState<'center' | 'above' | 'below'>('center');
   const [fontFamily, setFontFamily] = useState<string>('Impact, Arial, sans-serif');
   const [customFontSize, setCustomFontSize] = useState<number | null>(null);
-  const [windowWidth, setWindowWidth] = useState<number>(
-    typeof window !== 'undefined' ? window.innerWidth : 0
-  );
+  // Start with a fixed value so server and client markup match during hydration
+  const [windowWidth, setWindowWidth] = useState<number>(0);
   const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
